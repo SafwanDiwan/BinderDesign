@@ -10,3 +10,6 @@ proteinMPNNOutputPath=dl_binder_design/mpnn_fr/output
 rfDiffusionConda=/ssd1/home/safwand/miniconda3/envs/SE3nv/bin/python
 rfDiffusionBasePath=dl_binder_design/RFDiffusion/RFdiffusion
 rfDiffusionOutputPath=dl_binder_design/RFDiffusion/RFDiffusionOutput
+
+rosettaConda=/ssd1/home/safwand/miniconda3/envs/rosetta
+rosettaBasePath=dl_binder_design/Rosetta/rosettaApp/rosetta.source.release-371/main
