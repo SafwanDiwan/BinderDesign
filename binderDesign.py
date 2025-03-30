@@ -3,10 +3,10 @@ import os
 import argparse
 import re
 from pathlib import Path
-
+# 1-33
 
 # Example usage:
-# python binderDesign.py -target dl_binder_design/Rosetta/rosettaInput/11_14_24_Novel_Target_1/output/spliced_seq50_from_110124Target_0001.pdb -hotspot "[A43, A44, A45]" -bindersize "50-150" -chainrange "A1-64" -designcount 25 -mpnnsequences 2
+# python binderDesign.py -target dl_binder_design/Rosetta/rosettaInput/11_14_24_Novel_Target_1_Testy/output/spliced_seq50_from_110124Target_0001Testy.pdb -hotspot "[A17, A18, A19]" -bindersize "50-150" -chainrange "A1-33" -designcount 25 -mpnnsequences 8
 
 def read_config(file_path):
     config = {}
@@ -64,14 +64,15 @@ def runRFDiffusion(rfDiffusionConda, rfDiffusionPath, rfDiffusionOutputPath, tar
     rfDiffusionCmd = [
         rfDiffusionConda,
         f'{rfDiffusionPath}/scripts/run_inference.py',
-        f'inference.output_prefix={rfDiffusionOutputPath}/{pdbName}/{pdbName}',
+        f'inference.output_prefix={rfDiffusionOutputPath}/{}/{pdbName}/{pdbName}',
         f'inference.input_pdb={targetPath}',
-        f'contigmap.contigs=[{binderSize}/0 {chainRange}]',
+        f'contigmap.contigs=[{chainRange}/0 {binderSize}]',
         f'ppi.hotspot_res={hotSpots}',
         f'inference.num_designs={designCount}',
+        f'contigmap.inpaint_str=[{chainRange}]',
         'denoiser.noise_scale_ca=0',
         'denoiser.noise_scale_frame=0']    
-    
+    print(rfDiffusionCmd)
     call(rfDiffusionCmd)
 
     outputFiles = f'{rfDiffusionOutputPath}/{pdbName}/*.pdb'
@@ -89,32 +90,32 @@ def runProteinMPNN(proteinMPNNConda, proteinMPNNPath, proteinMPNNOutputPath, sil
         '-c',  # Use -c to pass the command as a string
         f'{silentToolsPath}/silentfrompdbs {diffusedBinderPaths} > {pdbName}Binders.silent'
     ]
+
+    outputSilentPath = f'{proteinMPNNOutputPath}/{pdbName}/{pdbName}SequencedBinders.silent'
+
     proteinMPNNCmd = [
         proteinMPNNConda,
         f'{proteinMPNNPath}/dl_interface_design.py',
         '-silent',
         f'{pdbName}Binders.silent',
         '-outsilent',
-        f'{proteinMPNNOutputPath}/{pdbName}/{pdbName}Binders.out',
+        outputSilentPath,
         '-relax_cycles',
         f'{relaxationCount}',
         '-seqs_per_struct',
         f'{sequenceCount}',
         '-debug'
     ]
-
+    print(proteinMPNNCmd)
     Path(f'{proteinMPNNOutputPath}/{pdbName}/').mkdir(parents=True, exist_ok=True)
 
     print('Converting pdb files to silent...')
     call(pdbToSilentConversionCmd)
     print("Running protein MPNN...")
     call(proteinMPNNCmd)
-
-    outputSilentPath = f'{proteinMPNNOutputPath}/{pdbName}/{pdbName}Binders.silent'
-
     
     os.rename('check.point', f'{proteinMPNNOutputPath}/{pdbName}/check.point')
-    os.rename(f'{pdbName}Binders.silent', outputSilentPath)
+    os.rename(f'{pdbName}Binders.silent', f'{proteinMPNNOutputPath}/{pdbName}/{pdbName}Binders.silent')
     os.rename(f'{pdbName}Binders.silent.idx', f'{proteinMPNNOutputPath}/{pdbName}/{pdbName}Binders.silent.idx')
 
 
@@ -134,10 +135,11 @@ def runAlphaFoldInitialGuess(alphaFoldConda, alphaFoldPath, alphaFoldOutputPath,
     ]
     call(alphaFoldCmd)
 
+    outputFile = f'{alphaFoldOutputPath}/{pdbName}BinderOutput/{pdbName}Out.sc'
     os.rename(f'check.point', f'{alphaFoldOutputPath}/{pdbName}BinderOutput/{pdbName}Check.point')
-    os.rename(f'out.sc', f'{alphaFoldOutputPath}/{pdbName}BinderOutput/{pdbName}Out.sc')
+    os.rename(f'out.sc', outputFile)
 
-    return
+    return outputFile
 
 args, configArgs = obtainArguments()
 
@@ -152,7 +154,7 @@ print("Running Protein MPNN...")
 silentOutputFile = runProteinMPNN(configArgs['proteinMPNNConda'], configArgs['proteinMPNNBasePath'], configArgs['proteinMPNNOutputPath'], configArgs['silentToolsBasePath'], diffusedOutputFiles, pdbName, args.mpnnsequences)
 
 print("Running AlphaFold...")
-runAlphaFoldInitialGuess(configArgs['alphaFoldConda'], configArgs['alphaFoldBasePath'], configArgs['alphaFoldOutputPath'], pdbName, silentOutputFile)
+alphaFoldOutputFile = runAlphaFoldInitialGuess(configArgs['alphaFoldConda'], configArgs['alphaFoldBasePath'], configArgs['alphaFoldOutputPath'], pdbName, silentOutputFile)
 
 # Steps for use (with simplest file organization):
 # Install conda
@@ -177,4 +179,3 @@ runAlphaFoldInitialGuess(configArgs['alphaFoldConda'], configArgs['alphaFoldBase
     # rfDiffusionConda=/ssd1/home/safwand/miniconda3/envs/SE3nv/bin/python
     # rfDiffusionBasePath=dl_binder_design/RFDiffusion/RFdiffusion
     # rfDiffusionOutputPath=dl_binder_design/RFDiffusion/RFDiffusionOutput
-
