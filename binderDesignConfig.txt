@@ -1,15 +1,23 @@
 alphaFoldConda=/ssd1/home/safwand/miniconda3/envs/af2_binder_design/bin/python
 alphaFoldBasePath=dl_binder_design/af2_initial_guess
-alphaFoldOutputPath=dl_binder_design/af2_initial_guess/output
+alphaFoldOutputPath=PipelineOutput/AF2InitialGuess
 
 proteinMPNNConda=/ssd1/home/safwand/miniconda3/envs/proteinmpnn_binder_design/bin/python
 silentToolsBasePath=dl_binder_design/include/silent_tools
 proteinMPNNBasePath=dl_binder_design/mpnn_fr
-proteinMPNNOutputPath=dl_binder_design/mpnn_fr/output
+proteinMPNNOutputPath=PipelineOutput/ProteinMPNN
 
 rfDiffusionConda=/ssd1/home/safwand/miniconda3/envs/SE3nv/bin/python
 rfDiffusionBasePath=dl_binder_design/RFDiffusion/RFdiffusion
-rfDiffusionOutputPath=dl_binder_design/RFDiffusion/RFDiffusionOutput
+rfDiffusionOutputPath=PipelineOutput/RFDiffusion
 
 rosettaConda=/ssd1/home/safwand/miniconda3/envs/rosetta
 rosettaBasePath=dl_binder_design/Rosetta/rosettaApp/rosetta.source.release-371/main
+
+colabFoldConda=/ssd1/home/safwand/designSoftware/colabfold/localcolabfold/colabfold-conda/bin/python
+colabFoldBasePath=colabfold/localcolabfold/colabfold-conda/bin/colabfold_batch
+colabFoldOutputPath=PipelineOutput/SelectivityEvaluation
+
+proteinGeneratorConda=/ssd1/home/safwand/miniconda3/envs/proteingenerator/bin/python
+proteinGeneratorBasePath=protein_generator
+proteinGeneratorOutputPath=PipelineOutput/TargetDesign

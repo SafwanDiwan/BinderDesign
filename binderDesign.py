@@ -64,7 +64,7 @@ def runRFDiffusion(rfDiffusionConda, rfDiffusionPath, rfDiffusionOutputPath, tar
     rfDiffusionCmd = [
         rfDiffusionConda,
         f'{rfDiffusionPath}/scripts/run_inference.py',
-        f'inference.output_prefix={rfDiffusionOutputPath}/{pdbName}/{pdbName}',
+        f'inference.output_prefix={rfDiffusionOutputPath}/{}/{pdbName}/{pdbName}',
         f'inference.input_pdb={targetPath}',
         f'contigmap.contigs=[{chainRange}/0 {binderSize}]',
         f'ppi.hotspot_res={hotSpots}',
