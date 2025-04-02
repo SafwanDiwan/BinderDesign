@@ -7,6 +7,7 @@ import json
 import glob
 import numpy as np
 import shutil
+from pathlib import Path
 
 def read_config(file_path):
     config = {}
@@ -70,7 +71,7 @@ def createFastaFiles(outFolder):
     
     return fastaPathList
 
-def runColabFold(fastaPaths, colabFoldConda, colabFoldBasePath, batchSize=10):
+def runColabFold(fastaPaths, colabFoldConda, colabFoldBasePath, batchSize):
     foldDirectories = []
     processes = []  # To keep track of the started processes
 
@@ -84,44 +85,53 @@ def runColabFold(fastaPaths, colabFoldConda, colabFoldBasePath, batchSize=10):
             fastaPath,
             os.path.dirname(fastaPath)
         ]
+        call(colabFoldCmd)
+        foldDirectories.append(os.path.dirname(fastaPath))
         
         # Start the process
-        process = Popen(colabFoldCmd)
-        processes.append(process)
+      #  process = Popen(colabFoldCmd)
+      #  processes.append(process)
         
         # Wait for processes to complete when batch size is reached
-        if (i + 1) % batchSize == 0 or (i + 1) == len(fastaPaths):
+      #  if (i + 1) % batchSize == 0 or (i + 1) == len(fastaPaths):
             # Wait for all processes in the batch to finish
-            for p in processes:
-                p.wait()
+       #     for p in processes:
+        #        p.wait()
             # Collect results after batch is done
-            foldDirectories.extend([os.path.dirname(fastaPaths[j]) for j in range(i + 1 - batchSize, i + 1)])
+         #   foldDirectories.extend([os.path.dirname(fastaPaths[j]) for j in range(i + 1 - batchSize, i + 1)])
 
             # Clear the process list for the next batch
-            processes = []
-
+          #  processes = []
+   # print(foldDirectories)
     return foldDirectories
 
-
 def filterGoodTargets(foldDirectories, goodTargetDirectory):
+    goodDirectories = []
     for directory in foldDirectories:
+        print(f'Searching through directory {directory}')
         for filename in os.listdir(directory):
             # Check if the pattern exists in the file name
             if 'scores_rank_001' in filename:
                 scorePath = os.path.join(directory, filename)
 
-            with open(scorePath, "r") as f:
-                data = json.load(f)
-    
-            # Extract the pLDDT matrix
-            pLDDT = np.array(data["pae"])
-            avgpLDDT = np.mean(pLDDT)
-            if avgpLDDT >= 85:
-                # Move to folder with dates that has good binder targets in it
-                if 'relaxed_rank_001' in filename:
-                    pdbPath = os.path.join(directory, filename)
-                    os.makedirs(outputFolder, exist_ok=True)
-                    shutil.move(pdbPath, outputFolder)
+                with open(scorePath, "r") as f:
+                    data = json.load(f)
+        
+                # Extract the pLDDT matrix
+                pLDDT = np.array(data["plddt"])
+                avgpLDDT = np.mean(pLDDT)
+                if avgpLDDT >= 90:
+                    print(f'Found a good target in {scorePath}')
+                    goodDirectories.append(f'{directory}/{os.path.basename(os.path.normpath(directory))}.fasta')
+                    for filename in os.listdir(directory):
+                        # Move to folder with dates that has good binder targets in it
+                        if '_relaxed_rank_001' in filename:
+                            pdbPath = os.path.join(directory, filename)
+                            os.makedirs(goodTargetDirectory, exist_ok=True)
+                            shutil.copy(pdbPath, goodTargetDirectory)
+                            break
+                    break
+    return goodDirectories
 
 args, configArgs = obtainArguments()
 
@@ -138,8 +148,8 @@ runProteinGenerator(configArgs['proteinGeneratorConda'], configArgs['proteinGene
 
 fastaPaths = createFastaFiles(outputFolder)
 
-foldDirectories = runColabFold(fastaPaths, configArgs['colabFoldConda'], configArgs['colabFoldBasePath'], batchSize=args.batchsize)
+foldDirectories = runColabFold(fastaPaths, configArgs['colabFoldConda'], configArgs['colabFoldBasePath'], int(args.batchsize))
 
-filterGoodTargets(foldDirectories, f'{outputFolder}/GoodTargets')
+goodDirectories = filterGoodTargets(foldDirectories, f'{root_path}/ViableTargets')
 
-# python targetDesign.py -inputjson designSoftware/protein_generator/examples/out/design_000000_args.json -numdesigns 2
+# python targetDesign.py -inputjson designSoftware/protein_generator/examples/out/design_000000_args.json
